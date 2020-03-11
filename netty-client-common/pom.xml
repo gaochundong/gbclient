@@ -8,9 +8,9 @@
         <artifactId>gbclient-parent</artifactId>
         <version>1848.0-SNAPSHOT</version>
     </parent>
-    <artifactId>netty-client-jt809</artifactId>
-    <name>netty-client-jt809</name>
-    <description>Netty/Client/JT809</description>
+    <artifactId>netty-client-common</artifactId>
+    <name>netty-client-common</name>
+    <description>Netty/Client/Common</description>
 
     <dependencies>
 
@@ -26,25 +26,7 @@
             <groupId>ai.sangmado.gbprotocol</groupId>
             <artifactId>gbcommon</artifactId>
         </dependency>
-
-        <!--jt809-->
-        <dependency>
-            <groupId>ai.sangmado.gbprotocol</groupId>
-            <artifactId>jt809</artifactId>
-        </dependency>
-
-        <!--netty-codec-jt809-->
-        <dependency>
-            <groupId>ai.sangmado.gbcodec</groupId>
-            <artifactId>netty-codec-jt809</artifactId>
-        </dependency>
-
-        <!--netty-client-common-->
-        <dependency>
-            <groupId>ai.sangmado.gbclient</groupId>
-            <artifactId>netty-client-common</artifactId>
-        </dependency>
-
+        
         <!--guava-->
         <dependency>
             <groupId>com.google.guava</groupId>

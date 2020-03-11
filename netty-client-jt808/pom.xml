@@ -39,6 +39,12 @@
             <artifactId>netty-codec-jt808</artifactId>
         </dependency>
 
+        <!--netty-client-common-->
+        <dependency>
+            <groupId>ai.sangmado.gbclient</groupId>
+            <artifactId>netty-client-common</artifactId>
+        </dependency>
+
         <!--guava-->
         <dependency>
             <groupId>com.google.guava</groupId>
