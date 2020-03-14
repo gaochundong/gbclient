@@ -15,11 +15,13 @@ import ai.sangmado.gbprotocol.jt808.protocol.message.content.JT808_Message_Conte
 import ai.sangmado.gbprotocol.jt808.protocol.message.header.JT808MessageHeader;
 import ai.sangmado.gbprotocol.jt808.protocol.message.header.JT808MessageHeaderFactory;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
  * JT808 业务客户端应用程序
  */
+@SuppressWarnings("InfiniteLoopStatement")
 public class Application {
     public static void main(String[] args) {
         IBufferPool bufferPool = new PooledByteArrayFactory(512, 10);
@@ -37,11 +39,17 @@ public class Application {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        assert connection != null;
-        connection.write(packet);
+        if (connection != null) {
+            connection.write(packet);
+        }
+
         try {
-            Thread.currentThread().wait();
-        } catch (InterruptedException e) {
+            System.out.println("Client is connected.");
+            while (true) {
+                int value = System.in.read();
+                System.out.println(value);
+            }
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

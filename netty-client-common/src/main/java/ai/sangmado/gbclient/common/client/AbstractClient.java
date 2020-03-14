@@ -96,7 +96,7 @@ public abstract class AbstractClient<I, O> {
                 ((ConnectionLifecycleHandler<O, I>) lifecycleHandler).setConnection(this.connection);
             }
         });
-        channelFuture.await();
+        channelFuture.sync();
 
         return this.connection;
     }
