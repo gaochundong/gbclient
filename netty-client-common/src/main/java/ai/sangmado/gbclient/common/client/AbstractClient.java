@@ -86,17 +86,21 @@ public abstract class AbstractClient<I, O> {
         }
 
         ChannelFuture channelFuture = channelFactory.connect(serverInfo);
-        channelFuture.addListener((ChannelFutureListener) future -> {
-            if (!future.isSuccess()) {
-                future.cause().printStackTrace();
-            } else {
-                this.connection = connectionFactory.newConnection(channelFuture.channel());
-                ChannelPipeline pipeline = channelFuture.channel().pipeline();
-                ChannelHandler lifecycleHandler = pipeline.get(ClientRequiredConfigurator.CONNECTION_LIFECYCLE_HANDLER_NAME);
-                ((ConnectionLifecycleHandler<O, I>) lifecycleHandler).setConnection(this.connection);
-            }
-        });
-        channelFuture.sync();
+//        channelFuture.addListener((ChannelFutureListener) future -> {
+//            if (!future.isSuccess()) {
+//                future.cause().printStackTrace();
+//            } else {
+//                this.connection = connectionFactory.newConnection(channelFuture.channel());
+//                ChannelPipeline pipeline = channelFuture.channel().pipeline();
+//                ChannelHandler lifecycleHandler = pipeline.get(ClientRequiredConfigurator.CONNECTION_LIFECYCLE_HANDLER_NAME);
+//                ((ConnectionLifecycleHandler<O, I>) lifecycleHandler).setConnection(this.connection);
+//            }
+//        });
+        Channel channel = channelFuture.sync().channel();
+        this.connection = connectionFactory.newConnection(channel);
+        ChannelPipeline pipeline = channel.pipeline();
+        ChannelHandler lifecycleHandler = pipeline.get(ClientRequiredConfigurator.CONNECTION_LIFECYCLE_HANDLER_NAME);
+        ((ConnectionLifecycleHandler<O, I>) lifecycleHandler).setConnection(this.connection);
 
         return this.connection;
     }

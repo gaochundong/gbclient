@@ -14,6 +14,14 @@ public class Connection<I, O> extends DefaultChannelWriter<O> {
         super(nettyChannel);
     }
 
+    public String getConnectionId() {
+        return this.getChannel().id().asLongText();
+    }
+
+    public boolean isActive() {
+        return !this.isCloseIssued() && this.getChannel() != null && this.getChannel().isActive();
+    }
+
     public static <I, O> Connection<I, O> create(final Channel channel) {
         return new Connection<>(channel);
     }

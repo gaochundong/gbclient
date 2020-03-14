@@ -39,11 +39,12 @@ public class Application {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if (connection != null) {
-            connection.write(packet);
-        }
 
         try {
+            if (connection != null) {
+                connection.writeAndFlush(packet);
+            }
+
             System.out.println("Client is connected.");
             while (true) {
                 int value = System.in.read();
