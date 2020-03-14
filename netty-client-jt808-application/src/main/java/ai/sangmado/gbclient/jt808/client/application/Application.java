@@ -1,6 +1,8 @@
-package ai.sangmado.gbclient.jt808.client;
+package ai.sangmado.gbclient.jt808.client.application;
 
 import ai.sangmado.gbclient.common.channel.Connection;
+import ai.sangmado.gbclient.jt808.client.JT808Client;
+import ai.sangmado.gbclient.jt808.client.JT808ClientBuilder;
 import ai.sangmado.gbprotocol.gbcommon.memory.IBufferPool;
 import ai.sangmado.gbprotocol.gbcommon.memory.PooledByteArrayFactory;
 import ai.sangmado.gbprotocol.jt808.protocol.ISpecificationContext;
@@ -12,37 +14,39 @@ import ai.sangmado.gbprotocol.jt808.protocol.message.content.JT808MessageContent
 import ai.sangmado.gbprotocol.jt808.protocol.message.content.JT808_Message_Content_0x0100;
 import ai.sangmado.gbprotocol.jt808.protocol.message.header.JT808MessageHeader;
 import ai.sangmado.gbprotocol.jt808.protocol.message.header.JT808MessageHeaderFactory;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.MockitoAnnotations;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+/**
+ * JT808 业务客户端应用程序
+ */
+public class Application {
+    public static void main(String[] args) {
+        IBufferPool bufferPool = new PooledByteArrayFactory(512, 10);
+        ISpecificationContext ctx = new JT808ProtocolSpecificationContext().withBufferPool(bufferPool);
 
-public class JT808Client_Test {
-
-    private IBufferPool bufferPool = new PooledByteArrayFactory(512, 10);
-    private ISpecificationContext ctx = new JT808ProtocolSpecificationContext().withBufferPool(bufferPool);
-
-    @BeforeEach
-    public void setup() {
-        MockitoAnnotations.initMocks(this);
-    }
-
-    @Test
-    public void when_jt808_client_start_then_should_send_message() {
-        JT808MessagePacket packet = create_JT808_Message_0x0100_packet();
+        JT808MessagePacket packet = create_JT808_Message_0x0100_packet(ctx);
 
         String host = "localhost";
         int port = 7200;
         JT808ClientBuilder<JT808MessagePacket, JT808MessagePacket> clientBuilder = new JT808ClientBuilder<>(ctx, host, port);
         JT808Client<JT808MessagePacket, JT808MessagePacket> client = clientBuilder.build();
-        Connection<JT808MessagePacket, JT808MessagePacket> connection = client.connect();
+        Connection<JT808MessagePacket, JT808MessagePacket> connection = null;
+        try {
+            connection = client.connect();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        assert connection != null;
         connection.write(packet);
+        try {
+            Thread.currentThread().wait();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
-    private JT808MessagePacket create_JT808_Message_0x0100_packet() {
+    private static JT808MessagePacket create_JT808_Message_0x0100_packet(ISpecificationContext ctx) {
         JT808MessageId messageId = JT808MessageId.JT808_Message_0x0100;
         String phoneNumber = "123456";
         int serialNumber = 123;
@@ -71,8 +75,6 @@ public class JT808Client_Test {
                 .build();
 
         List<JT808MessagePacket> packets = JT808MessagePacketBuilder.buildPackets(ctx, header, content);
-        assertEquals(1, packets.size());
-
         return packets.get(0);
     }
 }

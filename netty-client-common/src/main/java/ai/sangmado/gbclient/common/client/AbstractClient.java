@@ -80,16 +80,24 @@ public abstract class AbstractClient<I, O> {
         return pipelineConfigurator;
     }
 
-    public Connection<O, I> connect() {
+    public Connection<O, I> connect() throws Exception {
         if (isShutdown.get()) {
             throw new IllegalStateException("Client is already shutdown.");
         }
 
         ChannelFuture channelFuture = channelFactory.connect(serverInfo);
-        this.connection = connectionFactory.newConnection(channelFuture.channel());
-        ChannelPipeline pipeline = channelFuture.channel().pipeline();
-//        ChannelHandler lifecycleHandler = pipeline.get(ClientRequiredConfigurator.CONNECTION_LIFECYCLE_HANDLER_NAME);
-//        ((ConnectionLifecycleHandler<O, I>) lifecycleHandler).setConnection(this.connection);
+        channelFuture.addListener((ChannelFutureListener) future -> {
+            if (!future.isSuccess()) {
+                future.cause().printStackTrace();
+            } else {
+                this.connection = connectionFactory.newConnection(channelFuture.channel());
+                ChannelPipeline pipeline = channelFuture.channel().pipeline();
+                ChannelHandler lifecycleHandler = pipeline.get(ClientRequiredConfigurator.CONNECTION_LIFECYCLE_HANDLER_NAME);
+                ((ConnectionLifecycleHandler<O, I>) lifecycleHandler).setConnection(this.connection);
+            }
+        });
+        channelFuture.await();
+
         return this.connection;
     }
 
