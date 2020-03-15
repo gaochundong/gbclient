@@ -1,6 +1,7 @@
 package ai.sangmado.gbclient.jt808.client;
 
 import ai.sangmado.gbclient.common.pipeline.PipelineConfigurator;
+import ai.sangmado.gbcodec.jt808.codec.JT808DelimiterBasedFrameDecoder;
 import ai.sangmado.gbcodec.jt808.codec.JT808MessageCodec;
 import ai.sangmado.gbprotocol.jt808.protocol.ISpecificationContext;
 import ai.sangmado.gbprotocol.jt808.protocol.message.JT808MessagePacket;
@@ -20,7 +21,8 @@ public class JT808ClientPipelineConfigurator<I extends JT808MessagePacket, O ext
 
     @Override
     public void configureNewPipeline(ChannelPipeline pipeline) {
-        pipeline.addLast(new JT808MessageCodec(ctx));
-        pipeline.addLast(messageHandler);
+        pipeline.addLast("JT808消息分割器", new JT808DelimiterBasedFrameDecoder());
+        pipeline.addLast("JT808消息编解码器", new JT808MessageCodec(ctx));
+        pipeline.addLast("JT808消息处理器", messageHandler);
     }
 }

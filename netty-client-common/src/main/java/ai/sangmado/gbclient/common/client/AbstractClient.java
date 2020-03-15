@@ -85,18 +85,11 @@ public abstract class AbstractClient<I, O> {
             throw new IllegalStateException("Client is already shutdown.");
         }
 
-        ChannelFuture channelFuture = channelFactory.connect(serverInfo);
-//        channelFuture.addListener((ChannelFutureListener) future -> {
-//            if (!future.isSuccess()) {
-//                future.cause().printStackTrace();
-//            } else {
-//                this.connection = connectionFactory.newConnection(channelFuture.channel());
-//                ChannelPipeline pipeline = channelFuture.channel().pipeline();
-//                ChannelHandler lifecycleHandler = pipeline.get(ClientRequiredConfigurator.CONNECTION_LIFECYCLE_HANDLER_NAME);
-//                ((ConnectionLifecycleHandler<O, I>) lifecycleHandler).setConnection(this.connection);
-//            }
-//        });
-        Channel channel = channelFuture.sync().channel();
+        ChannelFuture f = channelFactory.connect(serverInfo);
+        Channel channel = f.syncUninterruptibly().channel();
+        if (!f.isSuccess()) {
+            throw (Exception) f.cause();
+        }
         this.connection = connectionFactory.newConnection(channel);
         ChannelPipeline pipeline = channel.pipeline();
         ChannelHandler lifecycleHandler = pipeline.get(ClientRequiredConfigurator.CONNECTION_LIFECYCLE_HANDLER_NAME);

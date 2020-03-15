@@ -9,7 +9,7 @@ import io.netty.util.concurrent.EventExecutorGroup;
  * 业务客户端管道配置
  */
 public class ClientRequiredConfigurator<I, O> implements PipelineConfigurator<I, O> {
-    public static final String CONNECTION_LIFECYCLE_HANDLER_NAME = "CONNECTION_LIFECYCLE_HANDLER";
+    public static final String CONNECTION_LIFECYCLE_HANDLER_NAME = "连接生命周期管理器";
 
     private final EventExecutorGroup connectionHandlingExecutor;
 

@@ -36,25 +36,30 @@ public class Application {
         JT808Client<JT808MessagePacket, JT808MessagePacket> client = clientBuilder.build();
         Connection<JT808MessagePacket, JT808MessagePacket> connection = null;
         try {
+            System.out.println("Client is connecting.");
             connection = client.connect();
-            if (connection != null) {
-                messageHandler.notifyConnectionConnected(connection);
-            }
+            messageHandler.notifyConnectionConnected(connection);
+            System.out.println("Client is connected.");
         } catch (Exception e) {
+            System.out.println("Client connects failed.");
             e.printStackTrace();
         }
 
         try {
-            JT808MessagePacket packet = create_JT808_Message_0x0100_packet(ctx);
-
-            if (connection != null) {
-                connection.writeAndFlush(packet);
-            }
-
-            System.out.println("Client is connected.");
             while (true) {
-                int value = System.in.read();
+                char value = (char)System.in.read();
                 System.out.println(value);
+                if (value == '1') {
+                    try {
+                        JT808MessagePacket packet = create_JT808_Message_0x0100_packet(ctx);
+                        if (connection != null) {
+                            System.out.println("Client is sending " + packet.getHeader().getMessageId().getName());
+                            connection.writeAndFlush(packet);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
