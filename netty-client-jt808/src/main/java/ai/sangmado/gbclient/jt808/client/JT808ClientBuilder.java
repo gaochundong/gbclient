@@ -6,10 +6,12 @@ import ai.sangmado.gbclient.common.pipeline.PipelineConfigurator;
 import ai.sangmado.gbprotocol.jt808.protocol.ISpecificationContext;
 import ai.sangmado.gbprotocol.jt808.protocol.message.JT808MessagePacket;
 import io.netty.bootstrap.Bootstrap;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * JT808 业务客户端构造器
  */
+@Slf4j
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class JT808ClientBuilder<I extends JT808MessagePacket, O extends JT808MessagePacket> extends AbstractClientBuilder<I, O, JT808ClientBuilder<I, O>, JT808Client<I, O>> {
     private final ISpecificationContext ctx;

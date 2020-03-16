@@ -5,10 +5,12 @@ import ai.sangmado.gbclient.common.pipeline.PipelineConfigurator;
 import ai.sangmado.gbprotocol.jt808.protocol.ISpecificationContext;
 import ai.sangmado.gbprotocol.jt808.protocol.message.JT808MessagePacket;
 import io.netty.bootstrap.Bootstrap;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * JT808 业务客户端
  */
+@Slf4j
 @SuppressWarnings({"UnusedReturnValue", "unused", "FieldCanBeLocal"})
 public class JT808Client<I extends JT808MessagePacket, O extends JT808MessagePacket> extends AbstractClient<I, O> {
     private final ISpecificationContext ctx;
