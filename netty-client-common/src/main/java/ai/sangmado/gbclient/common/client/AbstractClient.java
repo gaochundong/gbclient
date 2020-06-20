@@ -6,6 +6,7 @@ import ai.sangmado.gbclient.common.pipeline.PipelineConfiguratorComposite;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -82,16 +83,25 @@ public abstract class AbstractClient<I, O> {
 
     public Connection<O, I> connect() throws Exception {
         if (isShutdown.get()) {
-            throw new IllegalStateException("Client is already shutdown.");
+            throw new IllegalStateException("客户端已经关闭");
         }
 
+        // 连接服务器，阻塞等待超时
         ChannelFuture f = channelFactory.connect(serverInfo);
-        Channel channel = f.syncUninterruptibly().channel();
+        f.await(10, TimeUnit.SECONDS);
+        if (!f.isDone()) {
+            throw new ConnectTimeoutException("连接服务器超时: " + this.serverInfo.toString());
+        }
         if (!f.isSuccess()) {
             throw (Exception) f.cause();
         }
+
+        // 通道与当前Client是一对一关系
+        Channel channel = f.channel();
         this.connection = connectionFactory.newConnection(channel);
-        ChannelPipeline pipeline = channel.pipeline();
+
+        // 向生命周期管理器中注册连接
+        ChannelPipeline pipeline = this.connection.getChannel().pipeline();
         ChannelHandler lifecycleHandler = pipeline.get(ClientRequiredConfigurator.CONNECTION_LIFECYCLE_HANDLER_NAME);
         ((ConnectionLifecycleHandler<O, I>) lifecycleHandler).setConnection(this.connection);
 
