@@ -38,9 +38,11 @@ public class JT808MessageHandler<I extends JT808MessagePacket, O extends JT808Me
         String connectionId = ctx.channel().id().asLongText();
 
         String json = Jackson.toJsonPrettyString(msg);
-        log.info("从服务器连接 [{}] 中接收到消息, 协议版本[{}], 消息ID[{}]{}{}",
+        log.info("从服务器连接 [{}] 中接收到消息, 协议版本[{}], 消息ID[{}/{}]{}{}",
                 connectionId,
-                msg.getHeader().getProtocolVersion().getName(), msg.getHeader().getMessageId().getName(),
+                msg.getHeader().getProtocolVersion().getName(),
+                msg.getHeader().getMessageId().getName(),
+                msg.getHeader().getMessageId().getDescription(),
                 System.lineSeparator(), json);
     }
 }

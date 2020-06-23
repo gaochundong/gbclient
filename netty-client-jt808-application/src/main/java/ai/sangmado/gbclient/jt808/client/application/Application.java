@@ -14,8 +14,7 @@ import ai.sangmado.gbprotocol.jt808.protocol.enums.JT808MessageId;
 import ai.sangmado.gbprotocol.jt808.protocol.enums.JT808ProtocolVersion;
 import ai.sangmado.gbprotocol.jt808.protocol.message.JT808MessagePacket;
 import ai.sangmado.gbprotocol.jt808.protocol.message.JT808MessagePacketBuilder;
-import ai.sangmado.gbprotocol.jt808.protocol.message.content.JT808MessageContent;
-import ai.sangmado.gbprotocol.jt808.protocol.message.content.JT808_Message_Content_0x0100;
+import ai.sangmado.gbprotocol.jt808.protocol.message.content.*;
 import ai.sangmado.gbprotocol.jt808.protocol.message.header.JT808MessageHeader;
 import ai.sangmado.gbprotocol.jt808.protocol.message.header.JT808MessageHeaderFactory;
 import com.google.common.base.Strings;
@@ -65,8 +64,30 @@ public class Application {
             String inputString = scanner.nextLine();
             log.info("输入参数: " + inputString);
             try {
-                if (inputString.equals("0x0100")) {
-                    JT808MessagePacket packet = create_JT808_Message_0x0100_packet(ctx);
+                JT808MessagePacket packet = null;
+                switch (inputString) {
+                    case "0x0100": {
+                        packet = create_JT808_Message_0x0100_packet(ctx);
+                        break;
+                    }
+                    case "0x0102": {
+                        packet = create_JT808_Message_0x0102_packet(ctx);
+                        break;
+                    }
+                    case "0x0002": {
+                        packet = create_JT808_Message_0x0002_packet(ctx);
+                        break;
+                    }
+                    case "0x0003": {
+                        packet = create_JT808_Message_0x0003_packet(ctx);
+                        break;
+                    }
+                    case "0x0004": {
+                        packet = create_JT808_Message_0x0004_packet(ctx);
+                        break;
+                    }
+                }
+                if (packet != null && connection.isActive()) {
                     logPacket(connection, packet);
                     connection.writeAndFlush(packet);
                 }
@@ -78,12 +99,15 @@ public class Application {
 
     private static void logPacket(Connection<JT808MessagePacket, JT808MessagePacket> connection, JT808MessagePacket packet) {
         String json = Jackson.toJsonPrettyString(packet);
-        log.info("通过连接 [{}] 向服务器发送消息, 协议版本[{}], 消息ID[{}]{}{}",
+        log.info("通过连接 [{}] 向服务器发送消息, 协议版本[{}], 消息ID[{}/{}]{}{}",
                 connection.getConnectionId(),
-                packet.getProtocolVersion().getName(), packet.getMessageId().getName(),
+                packet.getProtocolVersion().getName(),
+                packet.getMessageId().getName(),
+                packet.getMessageId().getDescription(),
                 System.lineSeparator(), json);
     }
 
+    // 终端注册
     private static JT808MessagePacket create_JT808_Message_0x0100_packet(ISpecificationContext ctx) {
         JT808MessageId messageId = JT808MessageId.JT808_Message_0x0100;
         String phoneNumber = "861064602988";
@@ -110,6 +134,86 @@ public class Application {
                 .deviceModel(deviceModel)
                 .plateNumber(plateNumber)
                 .plateColor(plateColor)
+                .build();
+
+        List<JT808MessagePacket> packets = JT808MessagePacketBuilder.buildPackets(ctx, header, content);
+        return packets.get(0);
+    }
+
+    // 终端鉴权
+    private static JT808MessagePacket create_JT808_Message_0x0102_packet(ISpecificationContext ctx) {
+        JT808MessageId messageId = JT808MessageId.JT808_Message_0x0102;
+        String phoneNumber = "861064602988";
+        int serialNumber = GlobalSerialNumberIssuer.next();
+
+        String authCode = "6eaf001e-b543-11ea-a56b-02641672dd7e";
+        String deviceImei = "888888888888888";
+        String softwareVersion = "1.2.3";
+
+        JT808MessageHeader header = JT808MessageHeaderFactory
+                .buildWith(ctx)
+                .withMessageId(messageId)
+                .withPhoneNumber(phoneNumber)
+                .withSerialNumber(serialNumber);
+        JT808MessageContent content = JT808_Message_Content_0x0102.builder()
+                .authCodeLength(authCode.length())
+                .authCode(authCode)
+                .deviceImei(deviceImei)
+                .softwareVersion(softwareVersion)
+                .build();
+
+        List<JT808MessagePacket> packets = JT808MessagePacketBuilder.buildPackets(ctx, header, content);
+        return packets.get(0);
+    }
+
+    // 终端心跳
+    private static JT808MessagePacket create_JT808_Message_0x0002_packet(ISpecificationContext ctx) {
+        JT808MessageId messageId = JT808MessageId.JT808_Message_0x0002;
+        String phoneNumber = "861064602988";
+        int serialNumber = GlobalSerialNumberIssuer.next();
+
+        JT808MessageHeader header = JT808MessageHeaderFactory
+                .buildWith(ctx)
+                .withMessageId(messageId)
+                .withPhoneNumber(phoneNumber)
+                .withSerialNumber(serialNumber);
+        JT808MessageContent content = JT808_Message_Content_0x0002.builder()
+                .build();
+
+        List<JT808MessagePacket> packets = JT808MessagePacketBuilder.buildPackets(ctx, header, content);
+        return packets.get(0);
+    }
+
+    // 终端注销
+    private static JT808MessagePacket create_JT808_Message_0x0003_packet(ISpecificationContext ctx) {
+        JT808MessageId messageId = JT808MessageId.JT808_Message_0x0003;
+        String phoneNumber = "861064602988";
+        int serialNumber = GlobalSerialNumberIssuer.next();
+
+        JT808MessageHeader header = JT808MessageHeaderFactory
+                .buildWith(ctx)
+                .withMessageId(messageId)
+                .withPhoneNumber(phoneNumber)
+                .withSerialNumber(serialNumber);
+        JT808MessageContent content = JT808_Message_Content_0x0003.builder()
+                .build();
+
+        List<JT808MessagePacket> packets = JT808MessagePacketBuilder.buildPackets(ctx, header, content);
+        return packets.get(0);
+    }
+
+    // 终端查询服务器时间请求
+    private static JT808MessagePacket create_JT808_Message_0x0004_packet(ISpecificationContext ctx) {
+        JT808MessageId messageId = JT808MessageId.JT808_Message_0x0004;
+        String phoneNumber = "861064602988";
+        int serialNumber = GlobalSerialNumberIssuer.next();
+
+        JT808MessageHeader header = JT808MessageHeaderFactory
+                .buildWith(ctx)
+                .withMessageId(messageId)
+                .withPhoneNumber(phoneNumber)
+                .withSerialNumber(serialNumber);
+        JT808MessageContent content = JT808_Message_Content_0x0004.builder()
                 .build();
 
         List<JT808MessagePacket> packets = JT808MessagePacketBuilder.buildPackets(ctx, header, content);
