@@ -35,8 +35,13 @@ public class Application {
                 .withProtocolVersion(JT808ProtocolVersion.V2013)
                 .withBufferPool(new PooledByteArrayFactory(512, 10));
 
-        String host = !Strings.isNullOrEmpty(System.getenv("JT808_SERVER_HOST")) ? System.getenv("JT808_SERVER_HOST") : "localhost";
-        int port = !Strings.isNullOrEmpty(System.getenv("JT808_SERVER_PORT")) ? Integer.parseInt(System.getenv("JT808_SERVER_PORT")) : 7200;
+        final String ENV_JT808_SERVER_HOST = "JT808_SERVER_HOST";
+        final String ENV_JT808_SERVER_PORT = "JT808_SERVER_PORT";
+
+        String envHostValue = System.getenv(ENV_JT808_SERVER_HOST);
+        String host = !Strings.isNullOrEmpty(envHostValue) ? envHostValue : "localhost";
+        String envPortValue = System.getenv(ENV_JT808_SERVER_PORT);
+        int port = !Strings.isNullOrEmpty(envPortValue) ? Integer.parseInt(envPortValue) : 7200;
 
         JT808MessageHandler<JT808MessagePacket, JT808MessagePacket> messageHandler = new JT808MessageHandler<>(ctx);
         JT808ClientPipelineConfigurator<JT808MessagePacket, JT808MessagePacket> pipelineConfigurator = new JT808ClientPipelineConfigurator<>(ctx, messageHandler);
