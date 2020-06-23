@@ -24,12 +24,12 @@ public class JT808MessageHandler<I extends JT808MessagePacket, O extends JT808Me
     }
 
     public void notifyConnectionConnected(Connection<I, O> connection) {
-        log.info("已建立新连接, connectionId[{}]", connection.getConnectionId());
+        log.info("已与服务器建立连接, connectionId[{}]", connection.getConnectionId());
         establishedConnection = connection;
     }
 
     public void notifyConnectionClosed(Connection<I, O> connection) {
-        log.info("连接已关闭, connectionId[{}]", connection.getConnectionId());
+        log.info("已与服务器关闭连接, connectionId[{}]", connection.getConnectionId());
         establishedConnection = null;
     }
 
@@ -38,7 +38,7 @@ public class JT808MessageHandler<I extends JT808MessagePacket, O extends JT808Me
         String connectionId = ctx.channel().id().asLongText();
 
         String json = Jackson.toJsonPrettyString(msg);
-        log.info("从连接 [{}] 中接收到消息, 协议版本[{}], 消息ID[{}]{}{}",
+        log.info("从服务器连接 [{}] 中接收到消息, 协议版本[{}], 消息ID[{}]{}{}",
                 connectionId,
                 msg.getHeader().getProtocolVersion().getName(), msg.getHeader().getMessageId().getName(),
                 System.lineSeparator(), json);
