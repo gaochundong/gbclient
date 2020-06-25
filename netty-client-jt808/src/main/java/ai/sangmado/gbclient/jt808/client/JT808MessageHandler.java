@@ -28,8 +28,8 @@ public class JT808MessageHandler<I extends JT808MessagePacket, O extends JT808Me
         establishedConnection = connection;
     }
 
-    public void notifyConnectionClosed(Connection<I, O> connection) {
-        log.info("已与服务器关闭连接, connectionId[{}]", connection.getConnectionId());
+    public void notifyConnectionClosed() {
+        log.info("已与服务器关闭连接, connectionId[{}]", establishedConnection == null ? null : establishedConnection.getConnectionId());
         establishedConnection = null;
     }
 
