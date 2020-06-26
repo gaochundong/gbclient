@@ -58,12 +58,6 @@
             <artifactId>guava</artifactId>
         </dependency>
 
-        <!--netty-->
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
-        </dependency>
-
         <!--jackson-->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
