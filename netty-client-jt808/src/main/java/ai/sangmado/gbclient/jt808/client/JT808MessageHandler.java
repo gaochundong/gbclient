@@ -24,12 +24,12 @@ public class JT808MessageHandler<I extends JT808MessagePacket, O extends JT808Me
     }
 
     public void notifyConnectionConnected(Connection<I, O> connection) {
-        log.info("已与服务器建立连接, connectionId[{}]", connection.getConnectionId());
+        log.info("已与服务器建立连接, 连接ID[{}]", connection.getConnectionId());
         establishedConnection = connection;
     }
 
     public void notifyConnectionClosed() {
-        log.info("已与服务器关闭连接, connectionId[{}]", establishedConnection == null ? null : establishedConnection.getConnectionId());
+        log.info("已与服务器关闭连接, 连接ID[{}]", establishedConnection == null ? null : establishedConnection.getConnectionId());
         establishedConnection = null;
     }
 
