@@ -15,10 +15,7 @@ import ai.sangmado.gbprotocol.jt1078.protocol.message.content.JT1078_Message_Con
 import ai.sangmado.gbprotocol.jt1078.protocol.message.extension.JT1078MessageExtension;
 import ai.sangmado.gbprotocol.jt808.protocol.ISpecificationContext;
 import ai.sangmado.gbprotocol.jt808.protocol.JT808ProtocolSpecificationContext;
-import ai.sangmado.gbprotocol.jt808.protocol.enums.JT808MessageId;
-import ai.sangmado.gbprotocol.jt808.protocol.enums.JT808ProtocolVersion;
-import ai.sangmado.gbprotocol.jt808.protocol.enums.JT808VehicleState;
-import ai.sangmado.gbprotocol.jt808.protocol.enums.JT808WarningType;
+import ai.sangmado.gbprotocol.jt808.protocol.enums.*;
 import ai.sangmado.gbprotocol.jt808.protocol.message.JT808MessagePacket;
 import ai.sangmado.gbprotocol.jt808.protocol.message.JT808MessagePacketBuilder;
 import ai.sangmado.gbprotocol.jt808.protocol.message.content.*;
@@ -43,7 +40,7 @@ public class Application {
 
     public static void main(String[] args) {
         ISpecificationContext ctx = new JT808ProtocolSpecificationContext()
-                .withProtocolVersion(JT808ProtocolVersion.V2013)
+                .withProtocolVersion(JT808ProtocolVersion.V2011)
                 .withBufferPool(new PooledByteArrayFactory(512, 10));
 
         // 加载 JT1078 协议消息扩展
@@ -91,6 +88,10 @@ public class Application {
             try {
                 JT808MessagePacket packet = null;
                 switch (inputString) {
+                    case "0x0001": { // 终端通用应答
+                        packet = create_JT808_Message_0x0001_packet(ctx);
+                        break;
+                    }
                     case "0x0100": { // 终端注册
                         packet = create_JT808_Message_0x0100_packet(ctx);
                         break;
@@ -142,6 +143,32 @@ public class Application {
                 packet.getProtocolVersion().getName(),
                 connection.getConnectionId(),
                 System.lineSeparator(), json);
+    }
+
+    // 终端通用应答
+    private static JT808MessagePacket create_JT808_Message_0x0001_packet(ISpecificationContext ctx) {
+        JT808MessageId messageId = JT808MessageId.JT808_Message_0x0001;
+        String phoneNumber = "861064602988";
+        int serialNumber = GlobalSerialNumberIssuer.next(100);
+
+        // 回复平台成功
+        int ackSerialNumber = 301;
+        JT1078MessageId ackId = JT1078MessageId.JT1078_Message_0x9101;
+        JT808DeviceCommonReplyResult result = JT808DeviceCommonReplyResult.Success;
+
+        JT808MessageHeader header = JT808MessageHeaderFactory
+                .buildWith(ctx)
+                .withMessageId(messageId)
+                .withPhoneNumber(phoneNumber)
+                .withSerialNumber(serialNumber);
+        JT808MessageContent content = JT808_Message_Content_0x0001.builder()
+                .ackSerialNumber(ackSerialNumber)
+                .ackId(ackId)
+                .result(result)
+                .build();
+
+        List<JT808MessagePacket> packets = JT808MessagePacketBuilder.buildPackets(ctx, header, content);
+        return packets.get(0);
     }
 
     // 终端注册
