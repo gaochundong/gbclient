@@ -4,7 +4,7 @@ import ai.sangmado.gbclient.common.channel.Connection;
 import ai.sangmado.gbclient.jt808.client.JT808Client;
 import ai.sangmado.gbclient.jt808.client.JT808ClientBuilder;
 import ai.sangmado.gbclient.jt808.client.JT808ClientPipelineConfigurator;
-import ai.sangmado.gbclient.jt808.client.JT808MessageHandler;
+import ai.sangmado.gbclient.jt808.client.JT808MessageProcessor;
 import ai.sangmado.gbclient.jt808.client.utils.GlobalSerialNumberIssuer;
 import ai.sangmado.gbclient.jt808.client.utils.Jackson;
 import ai.sangmado.gbprotocol.gbcommon.memory.PooledByteArrayFactory;
@@ -56,8 +56,8 @@ public class Application {
         int port = !Strings.isNullOrEmpty(envPortValue) ? Integer.parseInt(envPortValue) : 7200;
 
         // 构建客户端
-        JT808MessageHandler<JT808MessagePacket, JT808MessagePacket> messageHandler = new JT808MessageHandler<>(ctx);
-        JT808ClientPipelineConfigurator<JT808MessagePacket, JT808MessagePacket> pipelineConfigurator = new JT808ClientPipelineConfigurator<>(ctx, messageHandler);
+        JT808MessageProcessor<JT808MessagePacket, JT808MessagePacket> messageProcessor = new JT808MessageProcessor<>(ctx);
+        JT808ClientPipelineConfigurator<JT808MessagePacket, JT808MessagePacket> pipelineConfigurator = new JT808ClientPipelineConfigurator<>(ctx, messageProcessor);
         JT808ClientBuilder<JT808MessagePacket, JT808MessagePacket> clientBuilder = new JT808ClientBuilder<>(ctx, host, port, pipelineConfigurator);
         JT808Client<JT808MessagePacket, JT808MessagePacket> client = clientBuilder.build();
 
@@ -68,14 +68,14 @@ public class Application {
             connection = client.connect();
 
             // 将服务器连接注入至消息处理器中
-            messageHandler.notifyConnectionConnected(connection);
+            messageProcessor.notifyConnectionConnected(connection);
         } catch (Exception ex) {
             log.error("连接服务器失败", ex);
         }
 
         // 连接失败直接退出
         if (connection == null) {
-            messageHandler.notifyConnectionClosed();
+            messageProcessor.notifyConnectionClosed();
             log.error("未能连接服务器, 暂无重连机制, 程序退出。");
             return;
         }

@@ -15,11 +15,11 @@ import java.util.List;
  */
 @Slf4j
 @SuppressWarnings({"FieldCanBeLocal", "unused"})
-public class JT808MessageHandler<I extends JT808MessagePacket, O extends JT808MessagePacket> extends MessageToMessageDecoder<JT808MessagePacket> {
+public class JT808MessageProcessor<I extends JT808MessagePacket, O extends JT808MessagePacket> extends MessageToMessageDecoder<JT808MessagePacket> {
     private final ISpecificationContext ctx;
     private Connection<I, O> establishedConnection = null;
 
-    public JT808MessageHandler(ISpecificationContext ctx) {
+    public JT808MessageProcessor(ISpecificationContext ctx) {
         this.ctx = ctx;
     }
 
