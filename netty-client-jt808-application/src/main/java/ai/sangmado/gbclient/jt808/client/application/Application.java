@@ -1,10 +1,12 @@
 package ai.sangmado.gbclient.jt808.client.application;
 
 import ai.sangmado.gbclient.common.channel.Connection;
-import ai.sangmado.gbclient.jt808.client.JT808Client;
-import ai.sangmado.gbclient.jt808.client.JT808ClientBuilder;
-import ai.sangmado.gbclient.jt808.client.JT808ClientPipelineConfigurator;
-import ai.sangmado.gbclient.jt808.client.JT808MessageProcessor;
+import ai.sangmado.gbclient.jt808.client.*;
+import ai.sangmado.gbclient.jt808.client.application.handler.JT808MessageConsumer;
+import ai.sangmado.gbclient.jt808.client.application.handler.JT808MessageHandlerMapping;
+import ai.sangmado.gbclient.jt808.client.application.handler.jt1078.JT1078_Message_Handler_0x9102;
+import ai.sangmado.gbclient.jt808.client.application.handler.jt808.JT808_Message_Handler_0x8001;
+import ai.sangmado.gbclient.jt808.client.dispatch.JT808MessageDispatcher;
 import ai.sangmado.gbclient.jt808.client.utils.GlobalSerialNumberIssuer;
 import ai.sangmado.gbclient.jt808.client.utils.Jackson;
 import ai.sangmado.gbprotocol.gbcommon.memory.PooledByteArrayFactory;
@@ -39,12 +41,10 @@ import java.util.Scanner;
 public class Application {
 
     public static void main(String[] args) {
+        // 协议上下文仅与协议报文序列化和反序列化过程相关
         ISpecificationContext ctx = new JT808ProtocolSpecificationContext()
                 .withProtocolVersion(JT808ProtocolVersion.V2011)
                 .withBufferPool(new PooledByteArrayFactory(512, 10));
-
-        // 加载 JT1078 协议消息扩展
-        JT1078MessageExtension.extend();
 
         // 通过环境变量加载服务器参数
         final String ENV_JT808_SERVER_HOST = "JT808_SERVER_HOST";
@@ -55,10 +55,20 @@ public class Application {
         String envPortValue = System.getenv(ENV_JT808_SERVER_PORT);
         int port = !Strings.isNullOrEmpty(envPortValue) ? Integer.parseInt(envPortValue) : 7200;
 
-        // 构建客户端
-        JT808MessageProcessor<JT808MessagePacket, JT808MessagePacket> messageProcessor = new JT808MessageProcessor<>(ctx);
+        // 加载JT1078协议消息扩展
+        JT1078MessageExtension.extend();
+
+        // 注册业务域消息处理器, 此处可应用IoC容器自动发现机制或者类反射扫描机制等进行处理器映射
+        JT808MessageHandlerMapping<JT808MessagePacket, JT808MessagePacket> messageHandlerMapping = new JT808MessageHandlerMapping<>();
+        messageHandlerMapping.addHandler(new JT808_Message_Handler_0x8001<>(ctx));
+        messageHandlerMapping.addHandler(new JT1078_Message_Handler_0x9102<>(ctx));
+
+        JT808MessageConsumer<JT808MessagePacket, JT808MessagePacket> messageConsumer = new JT808MessageConsumer<>(messageHandlerMapping.getHandlers());
+        JT808MessageDispatcher<JT808MessagePacket, JT808MessagePacket> messageDispatcher = new JT808MessageDispatcher<>().bindSubscriber(messageConsumer);
+        JT808ConnectionHandler<JT808MessagePacket, JT808MessagePacket> connectionHandler = new JT808ConnectionHandler<>();
+        JT808MessageProcessor<JT808MessagePacket, JT808MessagePacket> messageProcessor = new JT808MessageProcessor<>(connectionHandler, messageDispatcher);
         JT808ClientPipelineConfigurator<JT808MessagePacket, JT808MessagePacket> pipelineConfigurator = new JT808ClientPipelineConfigurator<>(ctx, messageProcessor);
-        JT808ClientBuilder<JT808MessagePacket, JT808MessagePacket> clientBuilder = new JT808ClientBuilder<>(ctx, host, port, pipelineConfigurator);
+        JT808ClientBuilder<JT808MessagePacket, JT808MessagePacket> clientBuilder = new JT808ClientBuilder<>(host, port, pipelineConfigurator);
         JT808Client<JT808MessagePacket, JT808MessagePacket> client = clientBuilder.build();
 
         // 尝试建立连接
@@ -67,15 +77,14 @@ public class Application {
             log.info("连接服务器中...");
             connection = client.connect();
 
-            // 将服务器连接注入至消息处理器中
-            messageProcessor.notifyConnectionConnected(connection);
+            // 将服务器连接注入至连接管理器中
+            connectionHandler.fireConnectionConnected(connection);
         } catch (Exception ex) {
             log.error("连接服务器失败", ex);
         }
 
-        // 连接失败直接退出
+        // 连接失败直接退出, 此处可以设计重连机制
         if (connection == null) {
-            messageProcessor.notifyConnectionClosed();
             log.error("未能连接服务器, 暂无重连机制, 程序退出。");
             return;
         }
