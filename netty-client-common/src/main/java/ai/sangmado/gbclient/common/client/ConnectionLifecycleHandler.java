@@ -1,8 +1,12 @@
 package ai.sangmado.gbclient.common.client;
 
 import ai.sangmado.gbclient.common.channel.Connection;
+import ai.sangmado.gbclient.common.channel.ConnectionFactory;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.ssl.SslHandshakeCompletionEvent;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 连接生命周期管理器
@@ -10,23 +14,63 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
  * @param <I> 读取连接通道的业务对象
  * @param <O> 写入连接通道的业务对象
  */
+@Slf4j
 public class ConnectionLifecycleHandler<I, O> extends ChannelInboundHandlerAdapter {
 
-    private Connection<I, O> connection;
+    private final ConnectionHandler<I, O> connectionHandler;
+    private final ConnectionFactory<I, O> connectionFactory;
 
-    void setConnection(Connection<I, O> newConnection) {
-        if (!newConnection.getChannel().isRegistered()) {
-            connection.close();
+    public ConnectionLifecycleHandler(
+            ConnectionHandler<I, O> connectionHandler,
+            ConnectionFactory<I, O> connectionFactory) {
+        this.connectionHandler = connectionHandler;
+        this.connectionFactory = connectionFactory;
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        log.info("管道激活, channelId[{}]", ctx.channel().id().asLongText());
+        if (ctx.channel().pipeline().get(SslHandler.class) == null) {
+            Connection<I, O> connection = connectionFactory.newConnection(ctx.channel());
+            super.channelActive(ctx);
+            fireConnectionConnected(connection);
         } else {
-            connection = newConnection;
+            super.channelActive(ctx);
+        }
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        log.info("管道激活, channelId[{}]", ctx.channel().id().asLongText());
+        super.userEventTriggered(ctx, evt);
+        if (evt instanceof SslHandshakeCompletionEvent) {
+            Connection<I, O> connection = connectionFactory.newConnection(ctx.channel());
+            fireConnectionConnected(connection);
         }
     }
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        if (connection != null) {
-            connection.close();
+        log.info("管道注销, channelId[{}]", ctx.channel().id().asLongText());
+        try {
+            super.channelUnregistered(ctx);
+        } finally {
+            // 存在对端地址
+            if (ctx.channel().remoteAddress() != null) {
+                Connection<I, O> closedConnection = connectionFactory.wrapClosedConnection(ctx.channel());
+                fireConnectionClosed(closedConnection);
+            }
         }
-        super.channelUnregistered(ctx);
+        ctx.channel().deregister();
+    }
+
+    private void fireConnectionConnected(Connection<I, O> connection) {
+        log.info("通道连接建立, connectionId[{}]", connection.getConnectionId());
+        connectionHandler.fireConnectionConnected(connection);
+    }
+
+    private void fireConnectionClosed(Connection<I, O> connection) {
+        log.info("通道连接关闭, connectionId[{}]", connection.getConnectionId());
+        connectionHandler.fireConnectionClosed(connection);
     }
 }

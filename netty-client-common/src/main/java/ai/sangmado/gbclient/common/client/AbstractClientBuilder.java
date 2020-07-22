@@ -1,5 +1,7 @@
 package ai.sangmado.gbclient.common.client;
 
+import ai.sangmado.gbclient.common.channel.ConnectionFactory;
+import ai.sangmado.gbclient.common.channel.UnpooledConnectionFactory;
 import ai.sangmado.gbclient.common.pipeline.PipelineConfigurator;
 import ai.sangmado.gbclient.common.pipeline.PipelineConfiguratorComposite;
 import io.netty.bootstrap.Bootstrap;
@@ -28,33 +30,34 @@ public abstract class AbstractClientBuilder<
 
     protected final ServerInfo serverInfo;
     protected final Bootstrap clientBootstrap;
-    protected ClientConnectionFactory<O, I> connectionFactory;
-    protected ClientChannelFactory<O, I> channelFactory;
 
+    protected PipelineConfigurator<I, O> pipelineConfigurator;
     protected ClientConfig clientConfig;
+
+    protected ConnectionFactory<I, O> connectionFactory;
+    protected ConnectionHandler<I, O> connectionHandler;
+
     protected EventLoopGroup eventLoopGroup;
-    protected PipelineConfigurator<O, I> pipelineConfigurator;
     protected Class<? extends Channel> clientChannelClass;
 
-    protected AbstractClientBuilder(ServerInfo serverInfo) {
-        this(serverInfo, new Bootstrap());
-    }
-
-    protected AbstractClientBuilder(ServerInfo serverInfo, Bootstrap bootstrap) {
-        this(serverInfo, bootstrap,
-                new UnpooledClientConnectionFactory<>(),
-                new ClientChannelFactoryImpl<>(bootstrap));
+    protected AbstractClientBuilder(
+            ServerInfo serverInfo, ConnectionHandler<I, O> connectionHandler) {
+        this(serverInfo, connectionHandler, new Bootstrap());
     }
 
     protected AbstractClientBuilder(
-            ServerInfo serverInfo, Bootstrap bootstrap,
-            ClientConnectionFactory<O, I> connectionFactory,
-            ClientChannelFactory<O, I> channelFactory) {
-        this.clientBootstrap = bootstrap;
+            ServerInfo serverInfo, ConnectionHandler<I, O> connectionHandler, Bootstrap bootstrap) {
+        this(serverInfo, connectionHandler, bootstrap, new UnpooledConnectionFactory<>());
+    }
+
+    protected AbstractClientBuilder(
+            ServerInfo serverInfo, ConnectionHandler<I, O> connectionHandler, Bootstrap bootstrap, ConnectionFactory<I, O> connectionFactory) {
         this.serverInfo = serverInfo;
-        this.clientConfig = new ClientConfig();
+        this.connectionHandler = connectionHandler;
+        this.clientBootstrap = bootstrap;
         this.connectionFactory = connectionFactory;
-        this.channelFactory = channelFactory;
+
+        this.clientConfig = new ClientConfig();
         defaultChannelOptions();
     }
 
@@ -97,18 +100,13 @@ public abstract class AbstractClientBuilder<
         return returnBuilder();
     }
 
-    public B pipelineConfigurator(PipelineConfigurator<O, I> pipelineConfigurator) {
+    public B pipelineConfigurator(PipelineConfigurator<I, O> pipelineConfigurator) {
         this.pipelineConfigurator = pipelineConfigurator;
         return returnBuilder();
     }
 
-    public B appendPipelineConfigurator(PipelineConfigurator<O, I> additionalConfigurator) {
+    public B appendPipelineConfigurator(PipelineConfigurator<I, O> additionalConfigurator) {
         return pipelineConfigurator(new PipelineConfiguratorComposite<>(pipelineConfigurator, additionalConfigurator));
-    }
-
-    public B withChannelFactory(ClientChannelFactory<O, I> factory) {
-        this.channelFactory = factory;
-        return returnBuilder();
     }
 
     @SuppressWarnings("unchecked")
@@ -128,7 +126,7 @@ public abstract class AbstractClientBuilder<
         return clientConfig;
     }
 
-    public PipelineConfigurator<O, I> getPipelineConfigurator() {
+    public PipelineConfigurator<I, O> getPipelineConfigurator() {
         return pipelineConfigurator;
     }
 

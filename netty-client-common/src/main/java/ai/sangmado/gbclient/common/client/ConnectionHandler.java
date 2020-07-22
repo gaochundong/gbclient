@@ -2,6 +2,9 @@ package ai.sangmado.gbclient.common.client;
 
 import ai.sangmado.gbclient.common.channel.Connection;
 
+import java.util.Map;
+import java.util.Optional;
+
 /**
  * 连接处理器
  *
@@ -10,7 +13,11 @@ import ai.sangmado.gbclient.common.channel.Connection;
  */
 public interface ConnectionHandler<I, O> {
 
+    Map<String, Connection<I, O>> getEstablishedConnections();
+
     Connection<I, O> getEstablishedConnection(String connectionId);
+
+    Optional<Connection<I, O>> takeOneEstablishedConnection();
 
     void fireConnectionConnected(Connection<I, O> connection);
 

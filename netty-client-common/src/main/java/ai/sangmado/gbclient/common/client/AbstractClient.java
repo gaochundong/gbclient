@@ -1,13 +1,20 @@
 package ai.sangmado.gbclient.common.client;
 
 import ai.sangmado.gbclient.common.channel.Connection;
+import ai.sangmado.gbclient.common.channel.ConnectionFactory;
 import ai.sangmado.gbclient.common.pipeline.PipelineConfigurator;
 import ai.sangmado.gbclient.common.pipeline.PipelineConfiguratorComposite;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ConnectTimeoutException;
+import io.netty.util.concurrent.EventExecutorGroup;
+import io.netty.util.concurrent.Future;
+import lombok.extern.slf4j.Slf4j;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Optional;
+import java.util.concurrent.CancellationException;
 
 /**
  * 业务客户端抽象类
@@ -15,62 +22,96 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @param <I> 读取连接通道的业务对象
  * @param <O> 写入连接通道的业务对象
  */
-@SuppressWarnings({"UnusedReturnValue", "unchecked"})
+@Slf4j
+@SuppressWarnings({"UnusedReturnValue"})
 public abstract class AbstractClient<I, O> {
 
     protected final ServerInfo serverInfo;
     protected final Bootstrap clientBootstrap;
-
-    protected final PipelineConfigurator<O, I> pipelineConfigurator;
     protected final ClientConfig clientConfig;
 
-    protected final ClientChannelFactory<O, I> channelFactory;
-    protected final ClientConnectionFactory<O, I> connectionFactory;
-
-    private final AtomicBoolean isShutdown = new AtomicBoolean();
-    private Connection<O, I> connection = null;
+    protected final ConnectionFactory<I, O> connectionFactory;
+    protected final ConnectionHandler<I, O> connectionHandler;
+    protected final EventExecutorGroup connHandlingExecutor;
 
     protected AbstractClient(
-            ServerInfo serverInfo, Bootstrap clientBootstrap,
-            PipelineConfigurator<O, I> pipelineConfigurator,
+            ServerInfo serverInfo,
+            Bootstrap clientBootstrap,
             ClientConfig clientConfig,
-            ClientChannelFactory<O, I> channelFactory,
-            ClientConnectionFactory<O, I> connectionFactory) {
-        if (null == clientBootstrap) throw new NullPointerException("Client bootstrap can not be null.");
+            ConnectionFactory<I, O> connectionFactory,
+            ConnectionHandler<I, O> connectionHandler,
+            EventExecutorGroup connHandlingExecutor) {
         if (null == serverInfo) throw new NullPointerException("Server info can not be null.");
+        if (null == clientBootstrap) throw new NullPointerException("Client bootstrap can not be null.");
         if (null == clientConfig) throw new NullPointerException("Client config can not be null.");
-        if (null == channelFactory) throw new NullPointerException("Channel factory can not be null.");
         if (null == connectionFactory) throw new NullPointerException("Connection factory can not be null.");
+        if (null == connectionHandler) throw new NullPointerException("Connection handler can not be null.");
+        if (null == connHandlingExecutor) throw new NullPointerException("Conn handling executor can not be null.");
 
         this.serverInfo = serverInfo;
         this.clientBootstrap = clientBootstrap;
-        this.pipelineConfigurator = pipelineConfigurator;
         this.clientConfig = clientConfig;
-        this.channelFactory = channelFactory;
         this.connectionFactory = connectionFactory;
+        this.connectionHandler = connectionHandler;
+        this.connHandlingExecutor = connHandlingExecutor;
+    }
 
-        this.clientBootstrap.handler(newChannelInitializer(pipelineConfigurator, clientConfig));
+    public Future<Connection<I, O>> connect() {
+        Future<Connection<I, O>> connector = connHandlingExecutor.submit(() -> {
+            ChannelFuture f = clientBootstrap.connect(serverInfo.getHost(), serverInfo.getPort());
+            f.awaitUninterruptibly();
+
+            if (!f.isDone()) {
+                throw new ConnectTimeoutException("连接服务器超时");
+            }
+            if (f.isCancelled()) {
+                throw new CancellationException("连接服务器被取消");
+            } else if (!f.isSuccess()) {
+                throw (Exception) f.cause();
+            }
+
+            Optional<Connection<I, O>> c = connectionHandler.takeOneEstablishedConnection();
+            return c.orElse(null);
+        });
+        connector.addListener(f -> {
+            if (f.isCancelled()) {
+                log.error("连接服务器被取消");
+            } else if (!f.isSuccess()) {
+                log.error("连接服务器失败, 失败原因[{}]", f.cause().getMessage());
+            }
+        });
+        return connector;
     }
 
     protected ChannelInitializer<Channel> newChannelInitializer(
-            PipelineConfigurator<O, I> pipelineConfigurator, ClientConfig clientConfig) {
-        PipelineConfigurator<O, I> configurator = adaptPipelineConfigurator(pipelineConfigurator, clientConfig);
-        return new ChannelInitializer<Channel>() {
+            PipelineConfigurator<I, O> pipelineConfigurator,
+            final ConnectionHandler<I, O> connectionHandler,
+            final EventExecutorGroup connHandlingExecutor,
+            final ClientConfig clientConfig) {
+        return new ChannelInitializer<>() {
             @Override
             public void initChannel(Channel ch) throws Exception {
+                PipelineConfigurator<I, O> configurator =
+                        adaptPipelineConfigurator(
+                                pipelineConfigurator, connectionHandler, connHandlingExecutor, clientConfig);
                 configurator.configureNewPipeline(ch.pipeline());
             }
         };
     }
 
-    protected PipelineConfigurator<O, I> adaptPipelineConfigurator(
-            PipelineConfigurator<O, I> pipelineConfigurator, ClientConfig clientConfig) {
-        PipelineConfigurator<O, I> clientRequiredConfigurator;
+    protected PipelineConfigurator<I, O> adaptPipelineConfigurator(
+            PipelineConfigurator<I, O> pipelineConfigurator,
+            final ConnectionHandler<I, O> connectionHandler,
+            final EventExecutorGroup connHandlingExecutor,
+            final ClientConfig clientConfig) {
+        PipelineConfigurator<I, O> clientRequiredConfigurator;
 
         if (clientConfig.isReadTimeoutSet()) {
-            clientRequiredConfigurator = new PipelineConfiguratorComposite<>(new ClientRequiredConfigurator<O, I>());
+            clientRequiredConfigurator = new PipelineConfiguratorComposite<>(
+                    new ClientRequiredConfigurator<>(connectionHandler, connectionFactory, connHandlingExecutor));
         } else {
-            clientRequiredConfigurator = new ClientRequiredConfigurator<>();
+            clientRequiredConfigurator =
+                    new ClientRequiredConfigurator<>(connectionHandler, connectionFactory, connHandlingExecutor);
         }
 
         if (pipelineConfigurator == null) {
@@ -79,42 +120,5 @@ public abstract class AbstractClient<I, O> {
             pipelineConfigurator = new PipelineConfiguratorComposite<>(pipelineConfigurator, clientRequiredConfigurator);
         }
         return pipelineConfigurator;
-    }
-
-    public Connection<O, I> connect() throws Exception {
-        if (isShutdown.get()) {
-            throw new IllegalStateException("客户端已经关闭");
-        }
-
-        // 连接服务器，阻塞等待超时
-        ChannelFuture f = channelFactory.connect(serverInfo);
-        f.await(10, TimeUnit.SECONDS);
-        if (!f.isDone()) {
-            throw new ConnectTimeoutException("连接服务器超时: " + this.serverInfo.toString());
-        }
-        if (!f.isSuccess()) {
-            throw (Exception) f.cause();
-        }
-
-        // 通道与当前Client是一对一关系
-        Channel channel = f.channel();
-        this.connection = connectionFactory.newConnection(channel);
-
-        // 向生命周期管理器中注册连接
-        ChannelPipeline pipeline = this.connection.getChannel().pipeline();
-        ChannelHandler lifecycleHandler = pipeline.get(ClientRequiredConfigurator.CONNECTION_LIFECYCLE_HANDLER_NAME);
-        ((ConnectionLifecycleHandler<O, I>) lifecycleHandler).setConnection(this.connection);
-
-        return this.connection;
-    }
-
-    public void shutdown() {
-        if (!isShutdown.compareAndSet(false, true)) {
-            return;
-        }
-
-        if (this.connection != null) {
-            this.connection.close();
-        }
     }
 }

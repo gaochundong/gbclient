@@ -2,6 +2,7 @@ package ai.sangmado.gbclient.jt808.client.application;
 
 import ai.sangmado.gbclient.common.channel.Connection;
 import ai.sangmado.gbclient.jt808.client.*;
+import ai.sangmado.gbclient.jt808.client.application.connector.JT808ConnectionListener;
 import ai.sangmado.gbclient.jt808.client.application.handler.JT808MessageConsumer;
 import ai.sangmado.gbclient.jt808.client.application.handler.JT808MessageHandlerMapping;
 import ai.sangmado.gbclient.jt808.client.application.handler.jt1078.JT1078_Message_Handler_0x9102;
@@ -37,7 +38,7 @@ import java.util.Scanner;
  * JT808 业务客户端应用程序
  */
 @Slf4j
-@SuppressWarnings("InfiniteLoopStatement")
+@SuppressWarnings({"InfiniteLoopStatement", "Convert2Lambda", "unchecked"})
 public class Application {
 
     public static void main(String[] args) {
@@ -68,24 +69,49 @@ public class Application {
         JT808ConnectionHandler<JT808MessagePacket, JT808MessagePacket> connectionHandler = new JT808ConnectionHandler<>();
         JT808MessageProcessor<JT808MessagePacket, JT808MessagePacket> messageProcessor = new JT808MessageProcessor<>(connectionHandler, messageDispatcher);
         JT808ClientPipelineConfigurator<JT808MessagePacket, JT808MessagePacket> pipelineConfigurator = new JT808ClientPipelineConfigurator<>(ctx, messageProcessor);
-        JT808ClientBuilder<JT808MessagePacket, JT808MessagePacket> clientBuilder = new JT808ClientBuilder<>(host, port, pipelineConfigurator);
+        JT808ClientBuilder<JT808MessagePacket, JT808MessagePacket> clientBuilder = new JT808ClientBuilder<>(host, port, pipelineConfigurator, connectionHandler);
         JT808Client<JT808MessagePacket, JT808MessagePacket> client = clientBuilder.build();
 
         // 尝试建立连接
+        JT808ConnectionListener<JT808MessagePacket, JT808MessagePacket> connectionListener = new JT808ConnectionListener<>();
+        connectionHandler.subscribe(connectionListener);
         Connection<JT808MessagePacket, JT808MessagePacket> connection = null;
         try {
-            log.info("连接服务器中...");
-            connection = client.connect();
+            int retryCount = 1;
+            int retryLimit = 30;
+            while (retryCount <= retryLimit) {
+                log.info("尝试连接服务器中, 尝试次数[{}]...", retryCount);
+                client.connect();
 
-            // 将服务器连接注入至连接管理器中
-            connectionHandler.fireConnectionConnected(connection);
+                // 连接的过程是异步的，在此同步等待
+                try {
+                    int waitTimeInMillis = 5000;
+                    log.info("开始等待, 等待时长[{}s]", waitTimeInMillis / 1000);
+                    for (int i = 0; i < waitTimeInMillis / 1000; i++) {
+                        connection = connectionListener.getEstablishedConnectionOrNull();
+                        if (connection != null) break;
+                        Thread.sleep(1000);
+                    }
+                    log.info("等待完毕");
+                } catch (InterruptedException ignored) {
+                }
+
+                connection = connectionListener.getEstablishedConnectionOrNull();
+                if (connection == null) {
+                    log.info("继续重试连接");
+                    retryCount++;
+                } else {
+                    log.info("连接服务器成功");
+                    break;
+                }
+            }
         } catch (Exception ex) {
-            log.error("连接服务器失败", ex);
+            log.error("连接服务器异常", ex);
         }
 
-        // 连接失败直接退出, 此处可以设计重连机制
+        // 未能连接服务器, 程序退出
         if (connection == null) {
-            log.error("未能连接服务器, 暂无重连机制, 程序退出。");
+            log.error("未能连接服务器, 程序退出");
             return;
         }
 

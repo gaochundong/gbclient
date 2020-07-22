@@ -8,6 +8,7 @@ import ai.sangmado.gbprotocol.jt808.protocol.message.JT808MessagePacket;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.SubmissionPublisher;
 
@@ -26,6 +27,7 @@ public class JT808ConnectionHandler<I extends JT808MessagePacket, O extends JT80
         super();
     }
 
+    @Override
     public Map<String, Connection<I, O>> getEstablishedConnections() {
         return establishedConnections;
     }
@@ -35,6 +37,11 @@ public class JT808ConnectionHandler<I extends JT808MessagePacket, O extends JT80
         if (connectionId == null || connectionId.length() == 0)
             throw new IllegalArgumentException("connectionId");
         return establishedConnections.get(connectionId);
+    }
+
+    @Override
+    public Optional<Connection<I, O>> takeOneEstablishedConnection() {
+        return establishedConnections.values().stream().findFirst();
     }
 
     @Override

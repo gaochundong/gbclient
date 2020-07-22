@@ -1,26 +1,36 @@
 package ai.sangmado.gbclient.common.client;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * 客户端参数配置
  */
 public class ClientConfig implements Cloneable {
+    public static final int NO_TIMEOUT = -1;
 
-    public static final long NO_TIMEOUT = -1;
-    private long readTimeoutInMillis = NO_TIMEOUT;
+    @Getter
+    @Setter
+    private int connectTimeoutInMillis = NO_TIMEOUT;
+    @Getter
+    @Setter
+    private int readTimeoutInMillis = NO_TIMEOUT;
 
-    protected ClientConfig() {
+    public ClientConfig() {
     }
 
-    protected ClientConfig(ClientConfig config) {
-        readTimeoutInMillis = config.readTimeoutInMillis;
+    public ClientConfig withConnectTimeoutInMillis(int connectTimeoutInMillis) {
+        setConnectTimeoutInMillis(connectTimeoutInMillis);
+        return this;
     }
 
-    public long getReadTimeoutInMillis() {
-        return readTimeoutInMillis;
+    public ClientConfig withReadTimeoutInMillis(int readTimeoutInMillis) {
+        setReadTimeoutInMillis(readTimeoutInMillis);
+        return this;
     }
 
-    void setReadTimeoutInMillis(long readTimeoutInMillis) {
-        this.readTimeoutInMillis = readTimeoutInMillis;
+    public boolean isConnectTimeoutSet() {
+        return NO_TIMEOUT != connectTimeoutInMillis;
     }
 
     public boolean isReadTimeoutSet() {
