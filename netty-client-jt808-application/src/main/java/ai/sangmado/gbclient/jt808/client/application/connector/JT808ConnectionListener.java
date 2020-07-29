@@ -2,6 +2,7 @@ package ai.sangmado.gbclient.jt808.client.application.connector;
 
 import ai.sangmado.gbclient.common.channel.Connection;
 import ai.sangmado.gbclient.common.client.event.ConnectionStatusChangedEvent;
+import ai.sangmado.gbprotocol.jt808.protocol.message.JT808Message;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.Flow;
@@ -11,19 +12,19 @@ import java.util.concurrent.Flow;
  */
 @Slf4j
 @SuppressWarnings({"FieldCanBeLocal", "unused"})
-public class JT808ConnectionListener<I, O> implements Flow.Subscriber<ConnectionStatusChangedEvent<I, O>> {
+public class JT808ConnectionListener implements Flow.Subscriber<ConnectionStatusChangedEvent<JT808Message, JT808Message>> {
 
-    private volatile Connection<I, O> connection;
+    private volatile Connection<JT808Message, JT808Message> connection;
 
     public JT808ConnectionListener() {
     }
 
-    public Connection<I, O> getEstablishedConnectionOrNull() {
+    public Connection<JT808Message, JT808Message> getEstablishedConnectionOrNull() {
         return connection;
     }
 
-    public Connection<I, O> getEstablishedConnection() {
-        Connection<I, O> copyConn = connection;
+    public Connection<JT808Message, JT808Message> getEstablishedConnection() {
+        Connection<JT808Message, JT808Message> copyConn = connection;
         if (copyConn == null)
             throw new IllegalStateException("连接未建立");
         if (!copyConn.isActive())
@@ -38,7 +39,7 @@ public class JT808ConnectionListener<I, O> implements Flow.Subscriber<Connection
     }
 
     @Override
-    public void onNext(ConnectionStatusChangedEvent<I, O> item) {
+    public void onNext(ConnectionStatusChangedEvent<JT808Message, JT808Message> item) {
         switch (item.getStatus()) {
             case Connected:
                 log.info("与服务器的连接建立成功, 连接状态[{}], 连接ID[{}]",

@@ -4,7 +4,7 @@ import ai.sangmado.gbclient.common.client.AbstractClientBuilder;
 import ai.sangmado.gbclient.common.client.ConnectionHandler;
 import ai.sangmado.gbclient.common.client.ServerInfo;
 import ai.sangmado.gbclient.common.pipeline.PipelineConfigurator;
-import ai.sangmado.gbprotocol.jt808.protocol.message.JT808MessagePacket;
+import ai.sangmado.gbprotocol.jt808.protocol.message.JT808Message;
 import io.netty.bootstrap.Bootstrap;
 import lombok.extern.slf4j.Slf4j;
 
@@ -13,21 +13,21 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @SuppressWarnings({"UnusedReturnValue", "unused"})
-public class JT808ClientBuilder<I extends JT808MessagePacket, O extends JT808MessagePacket> extends AbstractClientBuilder<I, O, JT808ClientBuilder<I, O>, JT808Client<I, O>> {
+public class JT808ClientBuilder extends AbstractClientBuilder<JT808Message, JT808Message, JT808ClientBuilder, JT808Client> {
 
-    public JT808ClientBuilder(String host, int port, PipelineConfigurator<I, O> pipelineConfigurator, ConnectionHandler<I, O> connectionHandler) {
+    public JT808ClientBuilder(String host, int port, PipelineConfigurator<JT808Message, JT808Message> pipelineConfigurator, ConnectionHandler<JT808Message, JT808Message> connectionHandler) {
         super(new ServerInfo(host, port), connectionHandler);
         this.pipelineConfigurator(pipelineConfigurator);
     }
 
-    public JT808ClientBuilder(String host, int port, PipelineConfigurator<I, O> pipelineConfigurator, ConnectionHandler<I, O> connectionHandler, Bootstrap bootstrap) {
+    public JT808ClientBuilder(String host, int port, PipelineConfigurator<JT808Message, JT808Message> pipelineConfigurator, ConnectionHandler<JT808Message, JT808Message> connectionHandler, Bootstrap bootstrap) {
         super(new ServerInfo(host, port), connectionHandler, bootstrap);
         this.pipelineConfigurator(pipelineConfigurator);
     }
 
     @Override
-    protected JT808Client<I, O> createClient() {
-        return new JT808Client<>(
+    protected JT808Client createClient() {
+        return new JT808Client(
                 serverInfo,
                 clientBootstrap,
                 clientConfig,

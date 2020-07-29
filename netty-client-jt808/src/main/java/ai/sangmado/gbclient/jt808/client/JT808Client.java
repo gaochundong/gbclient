@@ -6,7 +6,7 @@ import ai.sangmado.gbclient.common.client.ConnectionBasedClient;
 import ai.sangmado.gbclient.common.client.ConnectionHandler;
 import ai.sangmado.gbclient.common.client.ServerInfo;
 import ai.sangmado.gbclient.common.pipeline.PipelineConfigurator;
-import ai.sangmado.gbprotocol.jt808.protocol.message.JT808MessagePacket;
+import ai.sangmado.gbprotocol.jt808.protocol.message.JT808Message;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.util.concurrent.EventExecutorGroup;
 import lombok.extern.slf4j.Slf4j;
@@ -16,15 +16,15 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @SuppressWarnings({"UnusedReturnValue", "unused", "FieldCanBeLocal"})
-public class JT808Client<I extends JT808MessagePacket, O extends JT808MessagePacket> extends ConnectionBasedClient<I, O> {
+public class JT808Client extends ConnectionBasedClient<JT808Message, JT808Message> {
 
     public JT808Client(
             String host, int port,
             Bootstrap clientBootstrap,
             ClientConfig clientConfig,
-            PipelineConfigurator<I, O> pipelineConfigurator,
-            ConnectionFactory<I, O> connectionFactory,
-            ConnectionHandler<I, O> connectionHandler,
+            PipelineConfigurator<JT808Message, JT808Message> pipelineConfigurator,
+            ConnectionFactory<JT808Message, JT808Message> connectionFactory,
+            ConnectionHandler<JT808Message, JT808Message> connectionHandler,
             EventExecutorGroup connHandlingExecutor) {
         this(new ServerInfo(host, port),
                 clientBootstrap, clientConfig, pipelineConfigurator,
@@ -35,9 +35,9 @@ public class JT808Client<I extends JT808MessagePacket, O extends JT808MessagePac
             ServerInfo serverInfo,
             Bootstrap clientBootstrap,
             ClientConfig clientConfig,
-            PipelineConfigurator<I, O> pipelineConfigurator,
-            ConnectionFactory<I, O> connectionFactory,
-            ConnectionHandler<I, O> connectionHandler,
+            PipelineConfigurator<JT808Message, JT808Message> pipelineConfigurator,
+            ConnectionFactory<JT808Message, JT808Message> connectionFactory,
+            ConnectionHandler<JT808Message, JT808Message> connectionHandler,
             EventExecutorGroup connHandlingExecutor) {
         super(serverInfo,
                 clientBootstrap, clientConfig, pipelineConfigurator,

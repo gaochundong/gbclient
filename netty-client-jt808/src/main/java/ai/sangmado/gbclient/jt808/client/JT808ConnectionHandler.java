@@ -4,7 +4,7 @@ import ai.sangmado.gbclient.common.channel.Connection;
 import ai.sangmado.gbclient.common.client.ConnectionHandler;
 import ai.sangmado.gbclient.common.client.event.ConnectionStatus;
 import ai.sangmado.gbclient.common.client.event.ConnectionStatusChangedEvent;
-import ai.sangmado.gbprotocol.jt808.protocol.message.JT808MessagePacket;
+import ai.sangmado.gbprotocol.jt808.protocol.message.JT808Message;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -17,53 +17,53 @@ import java.util.concurrent.SubmissionPublisher;
  */
 @Slf4j
 @SuppressWarnings({"FieldCanBeLocal", "unused"})
-public class JT808ConnectionHandler<I extends JT808MessagePacket, O extends JT808MessagePacket>
-        extends SubmissionPublisher<ConnectionStatusChangedEvent<I, O>>
-        implements ConnectionHandler<I, O> {
+public class JT808ConnectionHandler
+        extends SubmissionPublisher<ConnectionStatusChangedEvent<JT808Message, JT808Message>>
+        implements ConnectionHandler<JT808Message, JT808Message> {
 
-    private final Map<String, Connection<I, O>> establishedConnections = new ConcurrentHashMap<>(64);
+    private final Map<String, Connection<JT808Message, JT808Message>> establishedConnections = new ConcurrentHashMap<>(64);
 
     public JT808ConnectionHandler() {
         super();
     }
 
     @Override
-    public Map<String, Connection<I, O>> getEstablishedConnections() {
+    public Map<String, Connection<JT808Message, JT808Message>> getEstablishedConnections() {
         return establishedConnections;
     }
 
     @Override
-    public Connection<I, O> getEstablishedConnection(String connectionId) {
+    public Connection<JT808Message, JT808Message> getEstablishedConnection(String connectionId) {
         if (connectionId == null || connectionId.length() == 0)
             throw new IllegalArgumentException("connectionId");
         return establishedConnections.get(connectionId);
     }
 
     @Override
-    public Optional<Connection<I, O>> takeOneEstablishedConnection() {
+    public Optional<Connection<JT808Message, JT808Message>> takeOneEstablishedConnection() {
         return establishedConnections.values().stream().findFirst();
     }
 
     @Override
-    public void fireConnectionConnected(Connection<I, O> connection) {
+    public void fireConnectionConnected(Connection<JT808Message, JT808Message> connection) {
         log.info("连接已建立, connectionId[{}]", connection.getConnectionId());
         establishedConnections.put(connection.getConnectionId(), connection);
         onConnectionConnected(connection);
     }
 
     @Override
-    public void fireConnectionClosed(Connection<I, O> closedConnection) {
+    public void fireConnectionClosed(Connection<JT808Message, JT808Message> closedConnection) {
         log.info("连接已关闭, connectionId[{}]", closedConnection.getConnectionId());
-        Connection<I, O> existingConnection = establishedConnections.remove(closedConnection.getConnectionId());
+        Connection<JT808Message, JT808Message> existingConnection = establishedConnections.remove(closedConnection.getConnectionId());
         onConnectionClosed(existingConnection != null ? existingConnection : closedConnection);
     }
 
-    private void onConnectionConnected(Connection<I, O> connection) {
+    private void onConnectionConnected(Connection<JT808Message, JT808Message> connection) {
         // 发送连接状态变更事件
         submit(new ConnectionStatusChangedEvent<>(connection, ConnectionStatus.Connected));
     }
 
-    private void onConnectionClosed(Connection<I, O> connection) {
+    private void onConnectionClosed(Connection<JT808Message, JT808Message> connection) {
         // 发送连接状态变更事件
         submit(new ConnectionStatusChangedEvent<>(connection, ConnectionStatus.Closed));
     }
