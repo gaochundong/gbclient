@@ -64,12 +64,13 @@ public class Application {
         messageHandlerMapping.addHandler(new JT808_Message_Handler_0x8001(ctx));
         messageHandlerMapping.addHandler(new JT1078_Message_Handler_0x9102(ctx));
 
+        // 构建客户端对象
         JT808MessageConsumer messageConsumer = new JT808MessageConsumer(messageHandlerMapping.getHandlers());
         JT808MessageDispatcher messageDispatcher = new JT808MessageDispatcher().bindSubscriber(messageConsumer);
         JT808ConnectionHandler connectionHandler = new JT808ConnectionHandler();
         JT808MessageProcessor messageProcessor = new JT808MessageProcessor(connectionHandler, messageDispatcher);
         JT808ClientPipelineConfigurator pipelineConfigurator = new JT808ClientPipelineConfigurator(ctx, messageProcessor);
-        JT808ClientBuilder clientBuilder = new JT808ClientBuilder(host, port, pipelineConfigurator, connectionHandler);
+        JT808ClientBuilder clientBuilder = new JT808ClientBuilder(host, port, connectionHandler, pipelineConfigurator);
         JT808Client client = clientBuilder.build();
 
         // 尝试建立连接
