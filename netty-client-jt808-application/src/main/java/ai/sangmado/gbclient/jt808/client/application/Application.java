@@ -17,7 +17,9 @@ import ai.sangmado.gbprotocol.jt1078.protocol.message.content.JT1078_Message_Con
 import ai.sangmado.gbprotocol.jt1078.protocol.message.content.JT1078_Message_Content_0x1206;
 import ai.sangmado.gbprotocol.jt1078.protocol.message.extension.JT1078MessageExtension;
 import ai.sangmado.gbprotocol.jt808.protocol.ISpecificationContext;
+import ai.sangmado.gbprotocol.jt808.protocol.IVersionedSpecificationContext;
 import ai.sangmado.gbprotocol.jt808.protocol.JT808ProtocolSpecificationContext;
+import ai.sangmado.gbprotocol.jt808.protocol.JT808ProtocolVersionedSpecificationContext;
 import ai.sangmado.gbprotocol.jt808.protocol.enums.*;
 import ai.sangmado.gbprotocol.jt808.protocol.message.JT808Message;
 import ai.sangmado.gbprotocol.jt808.protocol.message.JT808MessageAssembler;
@@ -44,7 +46,6 @@ public class Application {
     public static void main(String[] args) {
         // 协议上下文仅与协议报文序列化和反序列化过程相关
         ISpecificationContext ctx = new JT808ProtocolSpecificationContext()
-                .withProtocolVersion(JT808ProtocolVersion.V2011)
                 .withBufferPool(new PooledByteArrayFactory(512, 10));
 
         // 通过环境变量加载服务器参数
@@ -122,42 +123,47 @@ public class Application {
             String inputString = scanner.nextLine();
             log.info("输入参数: " + inputString);
             try {
+                IVersionedSpecificationContext newCtx = JT808ProtocolVersionedSpecificationContext.newInstance()
+                        .withProtocolVersion(JT808ProtocolVersion.V2011)
+                        .withByteOrder(ctx.getByteOrder())
+                        .withCharset(ctx.getCharset())
+                        .withBufferPool(ctx.getBufferPool());
                 JT808Message packet = null;
                 switch (inputString) {
                     case "0x0001": { // 终端通用应答
-                        packet = create_JT808_Message_0x0001_packet(ctx);
+                        packet = create_JT808_Message_0x0001_packet(newCtx);
                         break;
                     }
                     case "0x0100": { // 终端注册
-                        packet = create_JT808_Message_0x0100_packet(ctx);
+                        packet = create_JT808_Message_0x0100_packet(newCtx);
                         break;
                     }
                     case "0x0102": { // 终端鉴权
-                        packet = create_JT808_Message_0x0102_packet(ctx);
+                        packet = create_JT808_Message_0x0102_packet(newCtx);
                         break;
                     }
                     case "0x0002": { // 终端心跳
-                        packet = create_JT808_Message_0x0002_packet(ctx);
+                        packet = create_JT808_Message_0x0002_packet(newCtx);
                         break;
                     }
                     case "0x0003": { // 终端注销
-                        packet = create_JT808_Message_0x0003_packet(ctx);
+                        packet = create_JT808_Message_0x0003_packet(newCtx);
                         break;
                     }
                     case "0x0004": { // 终端查询服务器时间请求
-                        packet = create_JT808_Message_0x0004_packet(ctx);
+                        packet = create_JT808_Message_0x0004_packet(newCtx);
                         break;
                     }
                     case "0x0200": { // 终端位置信息汇报
-                        packet = create_JT808_Message_0x0200_packet(ctx);
+                        packet = create_JT808_Message_0x0200_packet(newCtx);
                         break;
                     }
                     case "0x1005": { // 终端上传乘客流量 - JT1078
-                        packet = create_JT1078_Message_0x1005_packet(ctx);
+                        packet = create_JT1078_Message_0x1005_packet(newCtx);
                         break;
                     }
                     case "0x1206": { // 终端文件上传完成通知 - JT1078
-                        packet = create_JT1078_Message_0x1206_packet(ctx);
+                        packet = create_JT1078_Message_0x1206_packet(newCtx);
                         break;
                     }
                 }
@@ -182,7 +188,7 @@ public class Application {
     }
 
     // 终端通用应答
-    private static JT808Message create_JT808_Message_0x0001_packet(ISpecificationContext ctx) {
+    private static JT808Message create_JT808_Message_0x0001_packet(IVersionedSpecificationContext ctx) {
         JT808MessageId messageId = JT808MessageId.JT808_Message_0x0001;
         String phoneNumber = "861064602988";
         int serialNumber = GlobalSerialNumberIssuer.next(100);
@@ -208,7 +214,7 @@ public class Application {
     }
 
     // 终端注册
-    private static JT808Message create_JT808_Message_0x0100_packet(ISpecificationContext ctx) {
+    private static JT808Message create_JT808_Message_0x0100_packet(IVersionedSpecificationContext ctx) {
         JT808MessageId messageId = JT808MessageId.JT808_Message_0x0100;
         String phoneNumber = "861064602988";
         int serialNumber = GlobalSerialNumberIssuer.next(100);
@@ -241,7 +247,7 @@ public class Application {
     }
 
     // 终端鉴权
-    private static JT808Message create_JT808_Message_0x0102_packet(ISpecificationContext ctx) {
+    private static JT808Message create_JT808_Message_0x0102_packet(IVersionedSpecificationContext ctx) {
         JT808MessageId messageId = JT808MessageId.JT808_Message_0x0102;
         String phoneNumber = "861064602988";
         int serialNumber = GlobalSerialNumberIssuer.next(100);
@@ -267,7 +273,7 @@ public class Application {
     }
 
     // 终端心跳
-    private static JT808Message create_JT808_Message_0x0002_packet(ISpecificationContext ctx) {
+    private static JT808Message create_JT808_Message_0x0002_packet(IVersionedSpecificationContext ctx) {
         JT808MessageId messageId = JT808MessageId.JT808_Message_0x0002;
         String phoneNumber = "861064602988";
         int serialNumber = GlobalSerialNumberIssuer.next(100);
@@ -285,7 +291,7 @@ public class Application {
     }
 
     // 终端注销
-    private static JT808Message create_JT808_Message_0x0003_packet(ISpecificationContext ctx) {
+    private static JT808Message create_JT808_Message_0x0003_packet(IVersionedSpecificationContext ctx) {
         JT808MessageId messageId = JT808MessageId.JT808_Message_0x0003;
         String phoneNumber = "861064602988";
         int serialNumber = GlobalSerialNumberIssuer.next(100);
@@ -303,7 +309,7 @@ public class Application {
     }
 
     // 终端查询服务器时间请求
-    private static JT808Message create_JT808_Message_0x0004_packet(ISpecificationContext ctx) {
+    private static JT808Message create_JT808_Message_0x0004_packet(IVersionedSpecificationContext ctx) {
         JT808MessageId messageId = JT808MessageId.JT808_Message_0x0004;
         String phoneNumber = "861064602988";
         int serialNumber = GlobalSerialNumberIssuer.next(100);
@@ -321,7 +327,7 @@ public class Application {
     }
 
     // 终端位置信息汇报
-    private static JT808Message create_JT808_Message_0x0200_packet(ISpecificationContext ctx) {
+    private static JT808Message create_JT808_Message_0x0200_packet(IVersionedSpecificationContext ctx) {
         JT808MessageId messageId = JT808MessageId.JT808_Message_0x0200;
         String phoneNumber = "861064602988";
         int serialNumber = GlobalSerialNumberIssuer.next(100);
@@ -362,7 +368,7 @@ public class Application {
     }
 
     // 终端上传乘客流量
-    private static JT808Message create_JT1078_Message_0x1005_packet(ISpecificationContext ctx) {
+    private static JT808Message create_JT1078_Message_0x1005_packet(IVersionedSpecificationContext ctx) {
         JT1078MessageId messageId = JT1078MessageId.JT1078_Message_0x1005;
         String phoneNumber = "861064602988";
         int serialNumber = GlobalSerialNumberIssuer.next(100);
@@ -384,7 +390,7 @@ public class Application {
     }
 
     // 终端文件上传完成通知
-    private static JT808Message create_JT1078_Message_0x1206_packet(ISpecificationContext ctx) {
+    private static JT808Message create_JT1078_Message_0x1206_packet(IVersionedSpecificationContext ctx) {
         JT1078MessageId messageId = JT1078MessageId.JT1078_Message_0x1206;
         String phoneNumber = "861064602988";
         int serialNumber = GlobalSerialNumberIssuer.next(100);
