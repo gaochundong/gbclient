@@ -124,7 +124,7 @@ public class Application {
             log.info("输入参数: " + inputString);
             try {
                 IVersionedSpecificationContext newCtx = JT808ProtocolVersionedSpecificationContext.newInstance()
-                        .withProtocolVersion(JT808ProtocolVersion.V2011)
+                        .withProtocolVersion(JT808ProtocolVersion.V2013)
                         .withByteOrder(ctx.getByteOrder())
                         .withCharset(ctx.getCharset())
                         .withBufferPool(ctx.getBufferPool());
@@ -225,7 +225,7 @@ public class Application {
         String deviceId = "8888888";
         String deviceModel = "Mock";
         String plateNumber = "京A88888";
-        Integer plateColor = 8;
+        JT808VehiclePlateColor plateColor = JT808VehiclePlateColor.JT808_Vehicle_Color_Yellow;
 
         JT808MessageHeader header = JT808MessageHeaderFactory
                 .buildWith(ctx)
@@ -352,14 +352,17 @@ public class Application {
                 .withPhoneNumber(phoneNumber)
                 .withSerialNumber(serialNumber);
         JT808MessageContent content = JT808_Message_Content_0x0200.builder()
-                .warningType(JT808WarningType.JT808_Warning_1)
-                .state(JT808VehicleState.JT808_Vehicle_State_19)
-                .latitude(333L)
-                .longitude(22L)
-                .altitude(4)
-                .speed(60)
-                .direction(18)
-                .timestamp(LocalDateTime.now(ZoneId.of("UTC+08:00")))
+                .basicInformation(
+                        JT808_Message_Content_0x0200.BasicInformation.builder()
+                                .warningType(JT808WarningType.JT808_Warning_1)
+                                .state(JT808VehicleState.JT808_Vehicle_State_19)
+                                .latitude(333L)
+                                .longitude(22L)
+                                .altitude(4)
+                                .speed(60)
+                                .direction(18)
+                                .timestamp(LocalDateTime.now(ZoneId.of("UTC+08:00")))
+                                .build())
                 .additionalInformationList(additionalInformationList)
                 .build();
 
