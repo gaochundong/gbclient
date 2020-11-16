@@ -37,51 +37,48 @@ public class JT1078_Message_Handler_0x9102 extends AbstractJT808MessageHandler {
     }
 
     @Override
-    protected void handleV2011Message(JT808MessageHandlerContext ctx, JT808Message message) {
-        JT808MessageHeader2011 header = (JT808MessageHeader2011) message.getHeader();
-        JT1078_Message_Content_0x9102 content = (JT1078_Message_Content_0x9102) message.getContent();
+    protected void handleV2011Message(JT808MessageHandlerContext ctx, JT808MessageHeader2011 header, JT808MessageContent content) {
+        JT1078_Message_Content_0x9102 instance = (JT1078_Message_Content_0x9102) content;
         log.info("平台下发音视频实时传输控制, 协议版本[{}], 通道号[{}], 控制指令[{}]",
-                header.getProtocolVersion(), content.getLogicalChannelNumber(), content.getChannelControlCommand());
+                header.getProtocolVersion(), instance.getLogicalChannelNumber(), instance.getChannelControlCommand());
 
         JT808Message response = create_JT808_Message_0x0001_packet(
                 JT808ProtocolVersionedSpecificationContext.buildFrom(header.getProtocolVersion(), this.getContext()),
-                message.getHeader().getPhoneNumber(),
-                message.getMessageId(),
-                message.getHeader().getSerialNumber(),
+                header.getPhoneNumber(),
+                header.getMessageId(),
+                header.getSerialNumber(),
                 JT808DeviceCommonReplyResult.Success);
         ctx.getConnection().writeAndFlush(response);
         log.info("平台下发音视频实时传输控制, 协议版本[{}], 回复成功[{}]", header.getProtocolVersion(), response.getMessageId());
     }
 
     @Override
-    protected void handleV2013Message(JT808MessageHandlerContext ctx, JT808Message message) {
-        JT808MessageHeader2013 header = (JT808MessageHeader2013) message.getHeader();
-        JT1078_Message_Content_0x9102 content = (JT1078_Message_Content_0x9102) message.getContent();
+    protected void handleV2013Message(JT808MessageHandlerContext ctx, JT808MessageHeader2013 header, JT808MessageContent content) {
+        JT1078_Message_Content_0x9102 instance = (JT1078_Message_Content_0x9102) content;
         log.info("平台下发音视频实时传输控制, 协议版本[{}], 通道号[{}], 控制指令[{}]",
-                header.getProtocolVersion(), content.getLogicalChannelNumber(), content.getChannelControlCommand());
+                header.getProtocolVersion(), instance.getLogicalChannelNumber(), instance.getChannelControlCommand());
 
         JT808Message response = create_JT808_Message_0x0001_packet(
                 JT808ProtocolVersionedSpecificationContext.buildFrom(header.getProtocolVersion(), this.getContext()),
-                message.getHeader().getPhoneNumber(),
-                message.getMessageId(),
-                message.getHeader().getSerialNumber(),
+                header.getPhoneNumber(),
+                header.getMessageId(),
+                header.getSerialNumber(),
                 JT808DeviceCommonReplyResult.Success);
         ctx.getConnection().writeAndFlush(response);
         log.info("平台下发音视频实时传输控制, 协议版本[{}], 回复成功[{}]", header.getProtocolVersion(), response.getMessageId());
     }
 
     @Override
-    protected void handleV2019Message(JT808MessageHandlerContext ctx, JT808Message message) {
-        JT808MessageHeader2019 header = (JT808MessageHeader2019) message.getHeader();
-        JT1078_Message_Content_0x9102 content = (JT1078_Message_Content_0x9102) message.getContent();
+    protected void handleV2019Message(JT808MessageHandlerContext ctx, JT808MessageHeader2019 header, JT808MessageContent content) {
+        JT1078_Message_Content_0x9102 instance = (JT1078_Message_Content_0x9102) content;
         log.info("平台下发音视频实时传输控制, 协议版本[{}], 版本号[{}], 通道号[{}], 控制指令[{}]",
-                header.getProtocolVersion(), header.getVersionNumber(), content.getLogicalChannelNumber(), content.getChannelControlCommand());
+                header.getProtocolVersion(), header.getVersionNumber(), instance.getLogicalChannelNumber(), instance.getChannelControlCommand());
 
         JT808Message response = create_JT808_Message_0x0001_packet(
                 JT808ProtocolVersionedSpecificationContext.buildFrom(header.getProtocolVersion(), this.getContext()),
-                message.getHeader().getPhoneNumber(),
-                message.getMessageId(),
-                message.getHeader().getSerialNumber(),
+                header.getPhoneNumber(),
+                header.getMessageId(),
+                header.getSerialNumber(),
                 JT808DeviceCommonReplyResult.Success);
         ctx.getConnection().writeAndFlush(response);
         log.info("平台下发音视频实时传输控制, 协议版本[{}], 回复成功[{}]", header.getProtocolVersion(), response.getMessageId());
